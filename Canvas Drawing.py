@@ -81,6 +81,7 @@ while True:
     
     #Flip the frame
     frame = cv2.flip(frame, 1)
+    frame = cv2.resize(frame, (800, 600))
     
     #find the points of the tip of the pen
     newPoints = findColor(frame, myColors, myColorValues)
