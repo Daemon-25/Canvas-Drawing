@@ -11,6 +11,8 @@ import numpy as np
 def empty(a):
     pass
 
+myPoints = []                      #[x, y, colorID, size]
+prev = 0
 myColors = [[49, 56, 186, 110, 203, 255],   #blue
             [143, 107, 197, 179, 255, 255],     #pink
             [22, 45, 118, 67, 182, 255]]     #green
@@ -20,8 +22,6 @@ myColors = [[49, 56, 186, 110, 203, 255],   #blue
 myColorValues = [[255, 0, 0],       #BGR
                  [255, 0, 255],
                  [102, 255, 178]]
-
-myPoints = []                      #[x, y, colorID]
 
 def findColor(img, myColors, myColorValues):
     #Covert image to HSV
@@ -43,8 +43,8 @@ def findColor(img, myColors, myColorValues):
         #Calling the function to draw contours and returning coordinates of the points of the tip
         x, y = getContours(mask)
         if x!=0 and y!=0:
-            cv2.circle(frame, (x, y), 10, myColorValues[count], cv2.FILLED)
-            newPoints.append([x, y, count])
+            cv2.circle(frame, (x, y), cv2.getTrackbarPos("Size", 'Whiteboard'), myColorValues[count], cv2.FILLED)
+            newPoints.append([x, y, count, cv2.getTrackbarPos("Size", 'Whiteboard')])
         count +=1
     return newPoints
         
@@ -71,10 +71,16 @@ def getContours(imgNew):
 #Function to draw on canvas
 def drawOnCanvas(myPoints, myColorValues):
     for pt in myPoints:
-        cv2.circle(frame, (pt[0], pt[1]), 10, myColorValues[pt[2]], cv2.FILLED)
+        cv2.circle(result, (pt[0], pt[1]), pt[3], myColorValues[pt[2]], cv2.FILLED)
 
 vid = cv2.VideoCapture(0)
 vid.set(10, 150)
+
+result = np.zeros([600, 800, 3], np.uint8)
+cv2.namedWindow("Whiteboard")
+cv2.createTrackbar("Size", "Whiteboard", 10, 500, empty)
+cv2.createTrackbar("Clear", "Whiteboard", 0, 1, empty)
+cv2.createTrackbar("Switch", 'Whiteboard', 0, 1, empty)
 
 while True:
     _, frame = vid.read()
@@ -90,10 +96,20 @@ while True:
     if len(newPoints)!=0:
         for newP in newPoints:
             myPoints.append(newP)
+            
+    if cv2.getTrackbarPos("Switch", "Whiteboard")==0:
+        myPoints.clear()
+        
     if len(myPoints)!=0:
         drawOnCanvas(myPoints, myColorValues)
+        
+    if cv2.getTrackbarPos("Clear", "Whiteboard")!=prev:
+        result = np.zeros([600, 800, 3], np.uint8)
+        myPoints.clear()
+        prev = cv2.getTrackbarPos("Clear", "Whiteboard")
 
     cv2.imshow("WebCam", frame)
+    cv2.imshow("Whiteboard", result)
     
     if cv2.waitKey(1) == ord('q'):
         break
